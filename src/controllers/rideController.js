@@ -1,39 +1,48 @@
+
 const Ride = require("../models/Ride");
 
 // Create Ride
 const createRide = async (req, res) => {
-    try {
-        const { pickup, destination, fare } = req.body;
+  try {
+    const { pickup, destination, fare } = req.body;
 
-      if (
-    !pickup?.trim() ||
-    !destination?.trim() ||
-    fare == null ||
-    fare <= 0
-) {
-    return res.status(400).json({
+    // Validate input
+    if (
+      !pickup?.trim() ||
+      !destination?.trim() ||
+      fare == null ||
+      !Number.isFinite(Number(fare)) ||
+      Number(fare) <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
         message: "Invalid ride details",
-    });
-}
-
-const rides = await Ride.find({
-    passenger: req.user.id,
-})
-.populate("passenger", "name email")
-.sort({
-    createdAt: -1,
-});
-
-        res.status(201).json({
-            success: true,
-            ride,
-        });
-
-    } catch (err) {
-        res.status(500).json({
-            message: err.message,
-        });
+      });
     }
+
+    // Create a new ride
+    const ride = new Ride({
+      pickup: pickup.trim(),
+      destination: destination.trim(),
+      fare: Number(fare),
+      passenger: req.user.id,
+    });
+
+    // Save ride in MongoDB
+    await ride.save();
+
+    // Send response
+    return res.status(201).json({
+      success: true,
+      message: "Ride created successfully",
+      ride,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
 };
 
 // Get All My Rides
