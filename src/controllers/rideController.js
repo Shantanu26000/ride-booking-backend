@@ -1,5 +1,5 @@
-
 const Ride = require("../models/Ride");
+const User = require("../models/User");
 
 // Create Ride
 const createRide = async (req, res) => {
@@ -91,6 +91,7 @@ const getRide = async (req, res) => {
 };
 
 // Update Ride Status
+// Update Ride Status
 const updateRide = async (req, res) => {
     try {
         const ride = await Ride.findById(req.params.id);
@@ -102,17 +103,33 @@ const updateRide = async (req, res) => {
         }
 
         if (ride.passenger.toString() !== req.user.id) {
-    return res.status(403).json({
-        message: "Unauthorized",
-    });
-}
+            return res.status(403).json({
+                message: "Unauthorized",
+            });
+        }
 
-        ride.status = req.body.status || ride.status;
+        const newStatus = req.body.status;
+
+        const allowedTransitions = {
+            requested: ["accepted", "cancelled"],
+            accepted: ["completed", "cancelled"],
+            completed: [],
+            cancelled: [],
+        };
+
+        if (!allowedTransitions[ride.status].includes(newStatus)) {
+            return res.status(400).json({
+                message: `Cannot change ride status from ${ride.status} to ${newStatus}`,
+            });
+        }
+
+        ride.status = newStatus;
 
         await ride.save();
 
         res.json({
             success: true,
+            message: "Ride status updated successfully",
             ride,
         });
 
@@ -155,10 +172,115 @@ const deleteRide = async (req, res) => {
     }
 };
 
+
+// Accept Ride
+const acceptRide = async (req, res) => {
+    try {
+        // Check logged-in user
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
+        // Only drivers can accept rides
+        if (user.role !== "driver") {
+            return res.status(403).json({
+                message: "Only drivers can accept rides",
+            });
+        }
+
+        // Find ride
+        const ride = await Ride.findById(req.params.id);
+
+        if (!ride) {
+            return res.status(404).json({
+                message: "Ride not found",
+            });
+        }
+
+        // Ride must be requested
+        if (ride.status !== "requested") {
+            return res.status(400).json({
+                message: "Ride is not available for acceptance",
+            });
+        }
+
+        // Check if another driver already accepted it
+        if (ride.driver) {
+            return res.status(400).json({
+                message: "Ride already has a driver",
+            });
+        }
+
+        // Assign driver
+        ride.driver = user._id;
+
+        // Change ride status
+        ride.status = "accepted";
+
+        // Save changes
+        await ride.save();
+
+        res.json({
+            success: true,
+            message: "Ride accepted successfully",
+            ride,
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            message: err.message,
+        });
+    }
+};
+
+// Get Available Rides for Drivers
+const getAvailableRides = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
+        if (user.role !== "driver") {
+            return res.status(403).json({
+                message: "Only drivers can view available rides",
+            });
+        }
+
+        const rides = await Ride.find({
+            status: "requested",
+            driver: null,
+        }).sort({
+            createdAt: -1,
+        });
+
+        res.json({
+            success: true,
+            total: rides.length,
+            rides,
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            message: err.message,
+        });
+    }
+};
+
+
 module.exports = {
     createRide,
     getMyRides,
     getRide,
     updateRide,
     deleteRide,
+     acceptRide,
+        getAvailableRides,
 };

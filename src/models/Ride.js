@@ -33,6 +33,11 @@ const rideSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         },
+        driver: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
+},
     },
     {
         timestamps: true,

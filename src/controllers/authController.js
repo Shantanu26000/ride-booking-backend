@@ -56,7 +56,6 @@ const register = async (req, res) => {
         });
 
         // Generate JWT
-    console.log("JWT Secret:", process.env.JWT_SECRET);
 console.log("User ID:", user._id);
         const token = jwt.sign(
             {
