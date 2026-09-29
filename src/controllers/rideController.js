@@ -129,9 +129,9 @@ if (user.role === "passenger") {
 }
 
 if (user.role === "driver") {
-    if (newStatus !== "completed") {
+    if (newStatus !== "completed" && newStatus !== "cancelled") {
         return res.status(403).json({
-            message: "Driver can only complete a ride",
+            message: "Driver can only complete or cancel a ride",
         });
     }
 }
