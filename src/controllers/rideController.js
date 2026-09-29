@@ -102,13 +102,39 @@ const updateRide = async (req, res) => {
             });
         }
 
-        if (ride.passenger.toString() !== req.user.id) {
-            return res.status(403).json({
-                message: "Unauthorized",
-            });
-        }
+       if (
+    ride.passenger.toString() !== req.user.id &&
+    (!ride.driver || ride.driver.toString() !== req.user.id)
+) {
+    return res.status(403).json({
+        message: "Unauthorized",
+    });
+}
 
         const newStatus = req.body.status;
+        const user = await User.findById(req.user.id);
+
+if (!user) {
+    return res.status(404).json({
+        message: "User not found",
+    });
+}
+
+if (user.role === "passenger") {
+    if (newStatus !== "cancelled") {
+        return res.status(403).json({
+            message: "Passenger can only cancel a ride",
+        });
+    }
+}
+
+if (user.role === "driver") {
+    if (newStatus !== "completed") {
+        return res.status(403).json({
+            message: "Driver can only complete a ride",
+        });
+    }
+}
 
         const allowedTransitions = {
             requested: ["accepted", "cancelled"],
