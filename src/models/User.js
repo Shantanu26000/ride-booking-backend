@@ -25,6 +25,10 @@ const userSchema = new mongoose.Schema(
             enum: ["passenger", "driver"],
             default: "passenger",
         },
+        isAvailable: {
+    type: Boolean,
+    default: false
+},
     },
     {
         timestamps: true,

@@ -300,6 +300,84 @@ const getAvailableRides = async (req, res) => {
     }
 };
 
+// Get Driver's Rides
+const getMyDriverRides = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
+        if (user.role !== "driver") {
+            return res.status(403).json({
+                message: "Only drivers can view their rides",
+            });
+        }
+
+        const rides = await Ride.find({
+            driver: req.user.id,
+        }).sort({
+            createdAt: -1,
+        });
+
+        res.json({
+            success: true,
+            total: rides.length,
+            rides,
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            message: err.message,
+        });
+    }
+};
+
+// Update Driver Availability
+const updateDriverAvailability = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
+        if (user.role !== "driver") {
+            return res.status(403).json({
+                message: "Only drivers can change availability",
+            });
+        }
+        
+
+        const { isAvailable } = req.body;
+
+        if (typeof isAvailable !== "boolean") {
+            return res.status(400).json({
+                message: "isAvailable must be true or false",
+            });
+        }
+
+        user.isAvailable = isAvailable;
+
+        await user.save();
+
+        res.json({
+            success: true,
+            message: "Driver availability updated",
+            isAvailable: user.isAvailable,
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            message: err.message,
+        });
+    }
+};
 
 module.exports = {
     createRide,
@@ -309,4 +387,6 @@ module.exports = {
     deleteRide,
      acceptRide,
         getAvailableRides,
+        getMyDriverRides,
+        updateDriverAvailability,
 };

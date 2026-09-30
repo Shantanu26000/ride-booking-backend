@@ -11,14 +11,17 @@ const {
     updateRide,
     deleteRide,
       acceptRide,
-        getAvailableRides
+        getAvailableRides,
+          getMyDriverRides,
+          updateDriverAvailability
 } = require("../controllers/rideController");
 
 router.post("/", auth, createRide);
 
 router.get("/", auth, getMyRides);
 router.get("/available", auth, getAvailableRides);
-
+router.get("/driver/my-rides", auth, getMyDriverRides);
+router.put("/driver/availability", auth, updateDriverAvailability);
 router.get("/:id", auth, getRide);
 
 router.put("/:id", auth, updateRide);
