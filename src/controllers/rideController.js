@@ -1,6 +1,6 @@
 const Ride = require("../models/Ride");
 const User = require("../models/User");
-
+const mongoose = require("mongoose");
 // Create Ride
 const createRide = async (req, res) => {
   try {
@@ -202,6 +202,11 @@ const deleteRide = async (req, res) => {
 // Accept Ride
 const acceptRide = async (req, res) => {
     try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({
+        message: "Invalid ride ID",
+    });
+}
         // Check logged-in user
         const user = await User.findById(req.user.id);
 
@@ -212,44 +217,39 @@ const acceptRide = async (req, res) => {
         }
 
         // Only drivers can accept rides
-        if (user.role !== "driver") {
-            return res.status(403).json({
-                message: "Only drivers can accept rides",
-            });
-        }
+       if (user.role !== "driver") {
+    return res.status(403).json({
+        message: "Only drivers can accept rides",
+    });
+}
 
-        // Find ride
-        const ride = await Ride.findById(req.params.id);
+// Check driver availability
+if (!user.isAvailable) {
+    return res.status(403).json({
+        message: "Driver is not available",
+    });
+}
 
-        if (!ride) {
-            return res.status(404).json({
-                message: "Ride not found",
-            });
-        }
+        const ride = await Ride.findOneAndUpdate(
+    {
+        _id: req.params.id,
+        status: "requested",
+        driver: null,
+    },
+    {
+        driver: user._id,
+        status: "accepted",
+    },
+    {
+        new: true,
+    }
+);
 
-        // Ride must be requested
-        if (ride.status !== "requested") {
-            return res.status(400).json({
-                message: "Ride is not available for acceptance",
-            });
-        }
-
-        // Check if another driver already accepted it
-        if (ride.driver) {
-            return res.status(400).json({
-                message: "Ride already has a driver",
-            });
-        }
-
-        // Assign driver
-        ride.driver = user._id;
-
-        // Change ride status
-        ride.status = "accepted";
-
-        // Save changes
-        await ride.save();
-
+if (!ride) {
+    return res.status(400).json({
+        message: "Ride is no longer available for acceptance",
+    });
+}
         res.json({
             success: true,
             message: "Ride accepted successfully",
