@@ -1,32 +1,81 @@
 const Ride = require("../models/Ride");
 const User = require("../models/User");
 const mongoose = require("mongoose");
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth radius in kilometers
+
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+}
 // Create Ride
 const createRide = async (req, res) => {
   try {
-    const { pickup, destination, fare } = req.body;
-
-    // Validate input
-    if (
-      !pickup?.trim() ||
-      !destination?.trim() ||
-      fare == null ||
-      !Number.isFinite(Number(fare)) ||
-      Number(fare) <= 0
-    ) {
-      return res.status(400).json({
+    const {
+    pickup,
+    destination,
+    pickupLocation,
+    destinationLocation
+} = req.body;
+if (
+    !pickup?.trim() ||
+    !destination?.trim() ||
+    !pickupLocation ||
+    !destinationLocation ||
+    !Number.isFinite(Number(pickupLocation.latitude)) ||
+    !Number.isFinite(Number(pickupLocation.longitude)) ||
+    !Number.isFinite(Number(destinationLocation.latitude)) ||
+    !Number.isFinite(Number(destinationLocation.longitude)) ||
+    Number(pickupLocation.latitude) < -90 ||
+    Number(pickupLocation.latitude) > 90 ||
+    Number(destinationLocation.latitude) < -90 ||
+    Number(destinationLocation.latitude) > 90 ||
+    Number(pickupLocation.longitude) < -180 ||
+    Number(pickupLocation.longitude) > 180 ||
+    Number(destinationLocation.longitude) < -180 ||
+    Number(destinationLocation.longitude) > 180
+) {
+    return res.status(400).json({
         success: false,
         message: "Invalid ride details",
-      });
-    }
+    });
+}
+
+
+    const distance = calculateDistance(
+    Number(pickupLocation.latitude),
+    Number(pickupLocation.longitude),
+    Number(destinationLocation.latitude),
+    Number(destinationLocation.longitude)
+);
+const fare = Math.round(50 + (distance * 12));
 
     // Create a new ride
-    const ride = new Ride({
-      pickup: pickup.trim(),
-      destination: destination.trim(),
-      fare: Number(fare),
-      passenger: req.user.id,
-    });
+  const ride = new Ride({
+    pickup: pickup.trim(),
+    pickupLocation: {
+        latitude: Number(pickupLocation.latitude),
+        longitude: Number(pickupLocation.longitude),
+    },
+
+    destination: destination.trim(),
+    destinationLocation: {
+        latitude: Number(destinationLocation.latitude),
+        longitude: Number(destinationLocation.longitude),
+    },
+     distance: distance,
+    fare: fare,
+    passenger: req.user.id,
+});
 
     // Save ride in MongoDB
     await ride.save();

@@ -3,14 +3,40 @@ const mongoose = require("mongoose");
 const rideSchema = new mongoose.Schema(
     {
         pickup: {
-            type: String,
-            required: true,
-        },
+    type: String,
+    required: true,
+},
 
-        destination: {
-            type: String,
-            required: true,
-        },
+pickupLocation: {
+    latitude: {
+        type: Number,
+        required: true,
+    },
+    longitude: {
+        type: Number,
+        required: true,
+    },
+},
+
+destination: {
+    type: String,
+    required: true,
+},
+
+destinationLocation: {
+    latitude: {
+        type: Number,
+        required: true,
+    },
+    longitude: {
+        type: Number,
+        required: true,
+    },
+},
+distance: {
+    type: Number,
+    required: true,
+},
 
         fare: {
             type: Number,
