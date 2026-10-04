@@ -1,6 +1,7 @@
 const Ride = require("../models/Ride");
 const User = require("../models/User");
 const mongoose = require("mongoose");
+const axios = require("axios");
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Earth radius in kilometers
 
@@ -57,7 +58,14 @@ if (
     Number(destinationLocation.latitude),
     Number(destinationLocation.longitude)
 );
-const fare = Math.round(50 + (distance * 12));
+const mlResponse = await axios.post(
+    "http://127.0.0.1:5001/predict",
+    {
+        distance: distance
+    }
+);
+
+const fare = mlResponse.data.predictedFare;
 
     // Create a new ride
   const ride = new Ride({
