@@ -112,3 +112,23 @@ MONGO_URI=YOUR_MONGODB_URI
 
 JWT_SECRET=YOUR_SECRET
 ```
+## ML-Based Fare Prediction
+
+The backend uses a Python machine learning service to predict ride fares.
+
+### Architecture
+
+```text
+Client
+   ↓
+Node.js / Express
+   ↓
+Calculate distance using Haversine formula
+   ↓
+Python Flask ML Service
+   ↓
+Linear Regression Model
+   ↓
+Predicted Fare
+   ↓
+MongoDB

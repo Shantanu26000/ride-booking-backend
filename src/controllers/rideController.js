@@ -59,7 +59,7 @@ if (
     Number(destinationLocation.longitude)
 );
 const mlResponse = await axios.post(
-    "http://127.0.0.1:5001/predict",
+    `${process.env.ML_SERVICE_URL}/predict`,
     {
         distance: distance
     }
@@ -94,12 +94,19 @@ const fare = mlResponse.data.predictedFare;
       message: "Ride created successfully",
       ride,
     });
-  } catch (err) {
+} catch (err) {
+    if (err.code === "ECONNREFUSED") {
+        return res.status(503).json({
+            success: false,
+            message: "Fare prediction service is unavailable",
+        });
+    }
+
     return res.status(500).json({
-      success: false,
-      message: err.message,
+        success: false,
+        message: err.message,
     });
-  }
+}
 };
 
 // Get All My Rides

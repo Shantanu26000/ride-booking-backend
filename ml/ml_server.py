@@ -19,6 +19,20 @@ def predict_fare():
             "message": "Distance is required"
         }), 400
 
+    try:
+        distance = float(distance)
+    except (TypeError, ValueError):
+        return jsonify({
+            "success": False,
+            "message": "Distance must be a number"
+        }), 400
+
+    if distance <= 0:
+        return jsonify({
+            "success": False,
+            "message": "Distance must be greater than 0"
+        }), 400
+
     predicted_fare = model.predict([[distance]])[0]
 
     return jsonify({
