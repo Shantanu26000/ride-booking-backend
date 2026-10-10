@@ -58,14 +58,27 @@ if (
     Number(destinationLocation.latitude),
     Number(destinationLocation.longitude)
 );
+
 const mlResponse = await axios.post(
     `${process.env.ML_SERVICE_URL}/predict`,
     {
         distance: distance
+    },
+    {
+        timeout: 5000
     }
 );
 
-const fare = mlResponse.data.predictedFare;
+
+
+const fare = mlResponse.data?.predictedFare;
+
+if (typeof fare !== "number" || !Number.isFinite(fare) || fare < 0) {
+    return res.status(502).json({
+        success: false,
+        message: "Invalid fare prediction received from ML service",
+    });
+}
 
     // Create a new ride
   const ride = new Ride({
@@ -94,19 +107,32 @@ const fare = mlResponse.data.predictedFare;
       message: "Ride created successfully",
       ride,
     });
+
 } catch (err) {
-    if (err.code === "ECONNREFUSED") {
+    if (
+        err.code === "ECONNREFUSED" ||
+        err.code === "ECONNABORTED" ||
+        err.code === "ETIMEDOUT"
+    ) {
         return res.status(503).json({
             success: false,
             message: "Fare prediction service is unavailable",
         });
     }
 
+    if (err.response) {
+        return res.status(502).json({
+            success: false,
+            message: "Fare prediction service returned an error",
+        });
+    }
+
     return res.status(500).json({
         success: false,
-        message: err.message,
+        message: "Internal server error",
     });
 }
+
 };
 
 // Get All My Rides

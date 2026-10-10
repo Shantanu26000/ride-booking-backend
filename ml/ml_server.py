@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 import joblib
-
 app = Flask(__name__)
 
 # Load the trained ML model
@@ -32,7 +31,6 @@ def predict_fare():
             "success": False,
             "message": "Distance must be greater than 0"
         }), 400
-
     predicted_fare = model.predict([[distance]])[0]
 
     return jsonify({
