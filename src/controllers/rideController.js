@@ -119,13 +119,15 @@ if (typeof fare !== "number" || !Number.isFinite(fare) || fare < 0) {
             message: "Fare prediction service is unavailable",
         });
     }
+if (err.response) {
+    console.error("ML service HTTP error:", err.response.status);
+    console.error("ML service response:", err.response.data);
 
-    if (err.response) {
-        return res.status(502).json({
-            success: false,
-            message: "Fare prediction service returned an error",
-        });
-    }
+    return res.status(502).json({
+        success: false,
+        message: "Fare prediction service returned an error",
+    });
+}
 
     return res.status(500).json({
         success: false,
